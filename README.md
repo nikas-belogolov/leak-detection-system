@@ -76,8 +76,8 @@ leak-detection-system/
 
 2.  **Build and run the entire stack:**
     ```bash
-    docker-compose build
-    docker-compose up -d
+    docker compose build
+    docker compose up -d
     ```
 
 The system will be available at `http://localhost:3000`

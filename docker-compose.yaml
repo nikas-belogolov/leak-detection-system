@@ -1,0 +1,93 @@
+x-microservice: &microservice-config
+  depends_on:
+    rabbitmq:
+      condition: service_healthy
+      restart: true
+  networks:
+    - app_network
+
+services:
+  rabbitmq:
+    container_name: rabbitmq-service
+    image: leak-detection-system/rabbitmq-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: rabbitmq
+    restart: always
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 20s
+      timeout: 30s
+      retries: 10
+    ports:
+      - 5672:5672
+      - 1883:1883
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq   # persistent data
+    networks:
+      - app_network
+
+  data-ingestion-service:
+    container_name: data-ingestion-service
+    image: leak-detection-system/data-ingestion-service
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: data-ingestion-service
+    <<: *microservice-config
+
+  notification-service:
+    container_name: notification-service
+    image: leak-detection-system/notification-service
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: notification-service
+    <<: *microservice-config
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DB=${MONGODB_DB}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+
+  inference-service:
+    container_name: inference-service
+    image: leak-detection-system/inference-service
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: inference-service
+    <<: *microservice-config
+
+  website:
+    container_name: website
+    image: leak-detection-system/website
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: website
+    ports:
+      - 3000:3000
+    <<: *microservice-config
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DB=${MONGODB_DB}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    command: pnpm start
+    
+volumes:
+  rabbitmq_data:
+
+networks:
+  app_network:
+    driver: bridge

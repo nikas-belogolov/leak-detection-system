@@ -1,0 +1,24 @@
+[project]
+name = "inference-service"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "aio-pika>=9.5.7",
+    "asyncio>=4.0.0",
+    "numpy>=2.3.4",
+    "protobuf>=6.33.0",
+    "torch>=2.4.0,<2.6.0",
+]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
